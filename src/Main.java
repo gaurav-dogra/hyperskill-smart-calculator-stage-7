@@ -1,20 +1,17 @@
-import java.util.*;
+import java.util.Scanner;
 
 class Main {
-
-    public static final String DELIMITER = ";";
 
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-        StringBuilder jointExpression = new StringBuilder();
-        Expression expressionObject = new Expression(null);
+        Expression expression = new Expression();
 
         label:
         while (true) {
-            String expression = scanner.nextLine();
+            String input = scanner.nextLine();
 
-            switch (expression) {
+            switch (input) {
                 case "/exit":
                     System.out.println("Bye!");
                     break label;
@@ -22,24 +19,22 @@ class Main {
                     System.out.println("this application supports variables, addition and subtraction");
                     break;
                 default:
-                    if (expression.matches("")) {
+                    if (input.matches("")) {
                         break;
-                    } else if (expression.matches("/.*")) {
+                    } else if (input.matches("/.*")) {
                         System.out.println("Unknown command");
                         break;
-                    } else if (expression.matches(".*=.*")) {
-                        // if the input expression is an assignment statement
-                        // it is added to jointExpression
-                        jointExpression.append(expression);
-                        jointExpression.append(DELIMITER);
-                    } else {
-                        jointExpression.append(expression);
-                        expressionObject = new Expression(jointExpression.toString(), DELIMITER);
-                        if (expressionObject.isInvalid()) {
-                            System.out.println("Invalid expression");
+                    } else if (input.matches(".*=.*")) { // assignment into a variable
+                        // input is added to the jointExpression
+                        String result = expression.isValid(input);
+                        if (result != null) { // nothing is printed if assignment statement is correct
+                            // it could print "Invalid Assignment", "Unknown variable", "Invalid identifier"
+                            System.out.println(result);
                             break;
                         }
-                        jointExpression = new StringBuilder();
+                    } else {
+                        String result = expression.compute(input);
+                        System.out.println(result);
                     }
             }
         }
