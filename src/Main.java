@@ -1,3 +1,5 @@
+import ExpressionBuster.Expression;
+
 import java.util.Scanner;
 
 class Main {
@@ -24,17 +26,11 @@ class Main {
                     } else if (input.matches("/.*")) {
                         System.out.println("Unknown command");
                         break;
-                    } else if (input.matches(".*=.*")) { // assignment into a variable
-                        // input is added to the jointExpression
-                        String result = expression.isValid(input);
-                        if (result != null) { // nothing is printed if assignment statement is correct
-                            // it could print "Invalid Assignment", "Unknown variable", "Invalid identifier"
-                            System.out.println(result);
-                            break;
-                        }
                     } else {
                         String result = expression.compute(input);
-                        System.out.println(result);
+                        if (result != null) {
+                            System.out.println(result);
+                        }
                     }
             }
         }

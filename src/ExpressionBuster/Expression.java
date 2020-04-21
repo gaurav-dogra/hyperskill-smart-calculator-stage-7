@@ -2,8 +2,8 @@ import java.util.*;
 
 public class Expression {
 
-    private Map<String, Integer> mapOfVariables;
-    private Deque<String> postfix;
+    private final Map<String, Integer> mapOfVariables;
+    private final Deque<String> postfix;
     private static final String INVALID_IDENTIFIER = "Invalid identifier";
     private static final String INVALID_ASSIGNMENT = "Invalid assignment";
     private static final String UNKNOWN_VARIABLE = "Unknown variable";
@@ -16,10 +16,22 @@ public class Expression {
 
     public String compute(String expression) {
         expression = expression.replaceAll("\\s+", "");
-
-        //expression = expression.replace("--", "+");
+        expression = expression.replaceAll("--", "+");
         expression = expression.replaceAll("[+]+", "+");
+        expression = expression.replaceAll("\\+-", "-");
+        expression = expression.replaceAll("-+", "-");
+
         System.out.println("expression = " + expression);
+
+        // more than one consecutive / or * make the expression INVALID
+        if (expression.matches(".*(//)+.*|.*(\\*\\*)+.*")) {
+            return INVALID_EXPRESSION;
+        }
+
+        if (expression.matches(".*=.*")) {
+            // error checking assignment expression
+            return isValidAssignmentOperation(expression);
+        }
 
         // if input is an integer or a known variable
         if (integerValueOf(expression) != null) {
@@ -32,8 +44,8 @@ public class Expression {
             return INVALID_EXPRESSION;
         }
 
-        if (!convertToPostfix(expression)) { // some error converting to postfix
-            return null;
+        if (!convertToPostfix(expression)) {
+            return null; // return null on error
         }
 
         return computePostfix();
@@ -41,7 +53,7 @@ public class Expression {
 
     private String computePostfix() {
         Deque<Integer> deque = new ArrayDeque<>();
-        System.out.println("postfix = " + postfix);
+        //System.out.println("postfix = " + postfix);
         for (String token : postfix) {
             if (token.matches("[+\\-*^/]")) {
                 Integer valueTwo = deque.removeLast();
@@ -84,14 +96,9 @@ public class Expression {
         }
     }
 
-    public String isValid(String input) {
-        return isValidAssignmentOperation(input);
-    }
-
-    private String isValidAssignmentOperation(String input) {
-        input = input.replaceAll("\\s+", "");
-        String leftSide = input.substring(0, input.indexOf('='));
-        String rightSide = input.substring(input.indexOf("=")+1);
+    private String isValidAssignmentOperation(String expression) {
+        String leftSide = expression.substring(0, expression.indexOf('='));
+        String rightSide = expression.substring(expression.indexOf("=")+1);
 
         // leftSide can only have a variable and variable name can only contain alphabets
         if (!leftSide.matches("[A-Za-z]+")) {
@@ -123,7 +130,6 @@ public class Expression {
     private boolean checkMap(String rightSide) {
         return mapOfVariables.get(rightSide) != null;
     }
-
 
     private boolean convertToPostfix(String inputExpression) {
 
