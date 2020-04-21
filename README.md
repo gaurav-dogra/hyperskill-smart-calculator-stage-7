@@ -27,7 +27,7 @@ output: Invalid expression
 input: 4+3)
 output: Invalid expression
 
-input: 2^2"
+input: 2^2
 output: 4
 
 input: 2*2^3
