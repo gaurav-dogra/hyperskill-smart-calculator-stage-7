@@ -1,3 +1,5 @@
+package ExpressionBuster;
+
 import java.util.*;
 
 public class Expression {
@@ -17,11 +19,11 @@ public class Expression {
     public String compute(String expression) {
         expression = expression.replaceAll("\\s+", "");
         expression = expression.replaceAll("--", "+");
-        expression = expression.replaceAll("[+]+", "+");
+        expression = expression.replaceAll("\\++", "+");
         expression = expression.replaceAll("\\+-", "-");
         expression = expression.replaceAll("-+", "-");
 
-        System.out.println("expression = " + expression);
+        //System.out.println("expression = " + expression);
 
         // more than one consecutive / or * make the expression INVALID
         if (expression.matches(".*(//)+.*|.*(\\*\\*)+.*")) {
@@ -30,13 +32,13 @@ public class Expression {
 
         if (expression.matches(".*=.*")) {
             // error checking assignment expression
-            return isValidAssignmentOperation(expression);
+            return updateMapOfVariables(expression);
         }
 
         // if input is an integer or a known variable
         if (integerValueOf(expression) != null) {
             return integerValueOf(expression) + "";
-        } else if (expression.matches("[a-zA-Z]+")) {
+        } else if (expression.matches("[a-zA-Z]+")) { // legit variable name but not in map
             return UNKNOWN_VARIABLE;
         }
 
@@ -96,7 +98,7 @@ public class Expression {
         }
     }
 
-    private String isValidAssignmentOperation(String expression) {
+    private String updateMapOfVariables(String expression) {
         String leftSide = expression.substring(0, expression.indexOf('='));
         String rightSide = expression.substring(expression.indexOf("=")+1);
 
@@ -110,7 +112,15 @@ public class Expression {
         }
 
         if(!rightSide.matches("[A-Za-z]+|-?\\d+")) {
-            return INVALID_ASSIGNMENT;
+            // check if right side can be solved as an expression
+            Expression rightSideAsExpression = new Expression();
+            String result = rightSideAsExpression.compute(rightSide);
+            try {
+                Integer.parseInt(result);
+                rightSide = result;
+            } catch (NumberFormatException e) {
+                return INVALID_ASSIGNMENT;
+            }
         }
 
         mapOfVariables.put(leftSide, integerValueOf(rightSide));
@@ -134,9 +144,14 @@ public class Expression {
     private boolean convertToPostfix(String inputExpression) {
 
         String expression = inputExpression.replaceAll("\\s+", "");
-        // splits the expression on delimiters +, -, /, *, ^, (, ), the results also keep the delimiter
+        // split the expression on delimiters +, -, /, *, ^, (, ), the results also keep the delimiter
         // e.g. (a + b) * c is { (, a, +, b, ), *, c }
         String[] array = expression.split("(?<=[+\\-*/()^])|(?=[+\\-*/()^])");
+
+        // it is not a valid expression e.g. a2a
+        if (array.length == 1) {
+            return false;
+        }
 
         Deque<String> deque = new ArrayDeque<>();
 

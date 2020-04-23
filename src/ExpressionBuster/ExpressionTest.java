@@ -38,6 +38,7 @@ public class ExpressionTest {
                 {"n = a2a", "Invalid assignment"},
                 {"a = 7 = 8", "Invalid assignment"},
                 {"e", "Unknown variable"},
+                {"c = 10 + 5", null}
                 // I don't know how to test the below
                 //                a=4
                 //                b=5

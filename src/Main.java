@@ -18,7 +18,8 @@ class Main {
                     System.out.println("Bye!");
                     break label;
                 case "/help":
-                    System.out.println("this application supports variables, addition and subtraction");
+                    System.out.println("this application supports variables, brackets, addition, subtraction, multiplication" +
+                            "division and power");
                     break;
                 default:
                     if (input.matches("")) {
