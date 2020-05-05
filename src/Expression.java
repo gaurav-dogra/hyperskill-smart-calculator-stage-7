@@ -1,22 +1,17 @@
-package ExpressionBuster;
+package calculator;
 
 import java.util.*;
 
 public class Expression {
 
-    private final Map<String, Integer> mapOfVariables;
-    private final Deque<String> postfix;
+    private final Map<String, Integer> mapOfVariables = new HashMap<>();
+
     private static final String INVALID_IDENTIFIER = "Invalid identifier";
     private static final String INVALID_ASSIGNMENT = "Invalid assignment";
     private static final String UNKNOWN_VARIABLE = "Unknown variable";
     private static final String INVALID_EXPRESSION = "Invalid expression";
 
-    public Expression() {
-        mapOfVariables = new HashMap<>();
-        postfix = new ArrayDeque<>();
-    }
-
-    public String compute(String expression) {
+    public int compute(String expression) throws MyException, AssignmentExpression {
         expression = expression.replaceAll("\\s+", "");
         expression = expression.replaceAll("--", "+");
         expression = expression.replaceAll("\\++", "+");
@@ -27,33 +22,34 @@ public class Expression {
 
         // more than one consecutive / or * make the expression INVALID
         if (expression.matches(".*(//)+.*|.*(\\*\\*)+.*")) {
-            return INVALID_EXPRESSION;
+            throw new MyException(INVALID_EXPRESSION);
         }
 
         if (expression.matches(".*=.*")) {
-            // error checking assignment expression
-            return updateMapOfVariables(expression);
+            // update mapOfVariables map
+            updateMapOfVariables(expression);
+            throw new AssignmentExpression();
         }
 
         // if input is an integer or a known variable
-        if (integerValueOf(expression) != null) {
-            return integerValueOf(expression) + "";
+        // i.e. 5
+        // a (when a was assigned value previously)
+        Integer value = integerValueOf(expression);
+        if (value != null) {
+            return value;
         } else if (expression.matches("[a-zA-Z]+")) { // legit variable name but not in map
-            return UNKNOWN_VARIABLE;
+            throw new MyException(UNKNOWN_VARIABLE);
         }
 
         if (!checkBrackets(expression)) {
-            return INVALID_EXPRESSION;
+            throw new MyException(INVALID_EXPRESSION);
         }
 
-        if (!convertToPostfix(expression)) {
-            return null; // return null on error
-        }
-
-        return computePostfix();
+        final Deque<String> postfix = convertToPostfix(expression); // convert the expression from infix to postfix
+        return computePostfix(postfix);
     }
 
-    private String computePostfix() {
+    private int computePostfix(Deque<String> postfix) throws MyException {
         Deque<Integer> deque = new ArrayDeque<>();
         //System.out.println("postfix = " + postfix);
         for (String token : postfix) {
@@ -79,11 +75,15 @@ public class Expression {
                         break;
                 }
             } else {
-                deque.add(integerValueOf(token));
+                Integer value = integerValueOf(token);
+                if (value != null) {
+                    deque.add(value);
+                } else {
+                    throw new MyException("Error");
+                }
             }
         }
-        postfix.clear();
-        return deque.removeLast()+"";
+        return deque.removeLast();
     }
 
     private Integer integerValueOf(String rightSide) {
@@ -98,34 +98,42 @@ public class Expression {
         }
     }
 
-    private String updateMapOfVariables(String expression) {
+    private void updateMapOfVariables(String expression) throws MyException, AssignmentExpression {
         String leftSide = expression.substring(0, expression.indexOf('='));
         String rightSide = expression.substring(expression.indexOf("=")+1);
 
         // leftSide can only have a variable and variable name can only contain alphabets
         if (!leftSide.matches("[A-Za-z]+")) {
-            return INVALID_IDENTIFIER;
+            throw new MyException(INVALID_IDENTIFIER);
         }
         // if correct variable name but not in map, and not an Integer
-        if(rightSide.matches("[A-Za-z]+") && !checkMap(rightSide) && !isInteger(rightSide)) {
-            return UNKNOWN_VARIABLE;
+        if (rightSide.matches("[A-Za-z]+") && !checkMap(rightSide) && !isInteger(rightSide)) {
+            throw new MyException(UNKNOWN_VARIABLE);
         }
 
-        if(!rightSide.matches("[A-Za-z]+|-?\\d+")) {
+        if (!rightSide.matches("[A-Za-z]+|-?\\d+")) {
             // check if right side can be solved as an expression
             Expression rightSideAsExpression = new Expression();
-            String result = rightSideAsExpression.compute(rightSide);
+            int result;
+
             try {
-                Integer.parseInt(result);
-                rightSide = result;
-            } catch (NumberFormatException e) {
-                return INVALID_ASSIGNMENT;
+                result = rightSideAsExpression.compute(rightSide);
+            } catch (MyException e) {
+                throw new MyException(INVALID_ASSIGNMENT);
+            } catch(AssignmentExpression ae) {
+                throw new AssignmentExpression();
+            }
+            mapOfVariables.put(leftSide, result);
+        } else {
+            Integer value = integerValueOf(rightSide);
+            if (value != null) {
+
+                mapOfVariables.put(leftSide, value);
+            } else {
+                throw new MyException("Error");
             }
         }
-
-        mapOfVariables.put(leftSide, integerValueOf(rightSide));
-        return null; // return null if all is well
-
+        //System.out.println(mapOfVariables);
     }
 
     private boolean isInteger(String rightSide) {
@@ -141,7 +149,7 @@ public class Expression {
         return mapOfVariables.get(rightSide) != null;
     }
 
-    private boolean convertToPostfix(String inputExpression) {
+    private Deque<String> convertToPostfix(String inputExpression) throws MyException {
 
         String expression = inputExpression.replaceAll("\\s+", "");
         // split the expression on delimiters +, -, /, *, ^, (, ), the results also keep the delimiter
@@ -150,10 +158,11 @@ public class Expression {
 
         // it is not a valid expression e.g. a2a
         if (array.length == 1) {
-            return false;
+            throw new MyException(INVALID_IDENTIFIER);
         }
 
         Deque<String> deque = new ArrayDeque<>();
+        Deque<String> postfix = new ArrayDeque<>();
 
         for (String expressionToken : array) {
             if (expressionToken.matches("[A-Za-z0-9]+")) { // variable or number
@@ -190,7 +199,7 @@ public class Expression {
                 postfix.add(dequeElement);
             }
         }
-        return true;
+        return postfix;
     }
 
     private static int getPriority(String s) {
